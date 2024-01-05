@@ -1,17 +1,8 @@
 package com.github.tndavidson;
 
-import static com.github.tomakehurst.wiremock.client.WireMock.aResponse;
-import static com.github.tomakehurst.wiremock.client.WireMock.get;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertTrue;
-
-import java.io.IOException;
-import java.io.InputStream;
-import java.net.URISyntaxException;
-import java.nio.file.Paths;
-
-import javax.net.ssl.SSLContext;
-
+import com.github.tomakehurst.wiremock.client.WireMock;
+import com.github.tomakehurst.wiremock.core.WireMockConfiguration;
+import com.github.tomakehurst.wiremock.junit.WireMockRule;
 import org.apache.hc.client5.http.classic.HttpClient;
 import org.apache.hc.client5.http.classic.methods.HttpGet;
 import org.apache.hc.core5.http.HttpResponse;
@@ -20,24 +11,27 @@ import org.junit.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.github.tomakehurst.wiremock.WireMockServer;
-import com.github.tomakehurst.wiremock.client.WireMock;
-import com.github.tomakehurst.wiremock.core.WireMockConfiguration;
-import com.github.tomakehurst.wiremock.junit.WireMockRule;
+import java.io.IOException;
+import java.net.URISyntaxException;
+import java.nio.file.Paths;
 
-public class TestFiduciaryService {
+import static com.github.tomakehurst.wiremock.client.WireMock.aResponse;
+import static com.github.tomakehurst.wiremock.client.WireMock.get;
+import static org.junit.Assert.assertNotNull;
+
+public class TestFiduciaryServiceSSL {
 	
-	private static final Logger LOGGER = LoggerFactory.getLogger(TestFiduciaryService.class);
+	private static final Logger LOGGER = LoggerFactory.getLogger(TestFiduciaryServiceSSL.class);
 	
 	HttpClientConfig config = new HttpClientConfig();
 
 	@Rule
 	public WireMockRule wireMockRule = new WireMockRule(WireMockConfiguration.wireMockConfig().httpsPort(8446)
-			.keystorePath("./src/test/resources/client-keystore.jks").keystorePassword("secret").keyManagerPassword("secret")
-			.trustStorePath("./src/test/resources/client-truststore.jks").trustStorePassword("secret").httpDisabled(true));
+			.keystorePath("./src/test/resources/server-keystore.jks").keystorePassword("secret").keyManagerPassword("secret")
+			.trustStorePath("./src/test/resources/server-truststore.jks").trustStorePassword("secret").httpDisabled(true));
 
 
-	WireMockServer wiremockServer = new WireMockServer(WireMockConfiguration.wireMockConfig().httpsPort(8446));
+	//WireMockServer wiremockServer = new WireMockServer(WireMockConfiguration.wireMockConfig().httpsPort(8446));
 	
     @SuppressWarnings("deprecation")
 	@Test
@@ -45,7 +39,7 @@ public class TestFiduciaryService {
 		config.setConnectionRequestTimeout(10000);
 		config.setConnectionTimeToLive(10000);
 		config.setConnectTimeout(10000);
-		config.setSocketTimeout(10000);
+		config.setSocketTimeout(8000);
 		config.setMaxConnPerRoute(1);
 		config.setMaxConnTotal(10);
 		config.setProtocol("TLS");
@@ -64,8 +58,8 @@ public class TestFiduciaryService {
 		HttpClient httpClient = HttpClientUtil.buildHttpClient(config);
 		
 
-		wiremockServer.stubFor(
-				get(WireMock.urlMatching("/fiduciary-data/v2/123456789")).willReturn(aResponse().withFixedDelay(2000)));
+		WireMock.stubFor(
+				get(WireMock.urlMatching("/fiduciary-data/v2/123456789")).willReturn(aResponse().withFixedDelay(20000)));
 		
 		
 		
