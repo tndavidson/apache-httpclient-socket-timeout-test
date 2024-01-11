@@ -31,6 +31,9 @@ public class JavaHttpClientTest {
 
     @Test
     public void testJavaHttpClient() throws URISyntaxException, IOException, InterruptedException {
+
+        System.setProperty("jdk.httpclient.HttpClient.log", "errors,requests,headers,frames[:control:data:window:all],content,ssl,trace,channel,all");
+
         HttpClientConfig config = new HttpClientConfig();
         config.setProtocol("TLS");
         config.setKeyStore(
@@ -45,7 +48,6 @@ public class JavaHttpClientTest {
         config.setTrustStorePassword("secret");
 
         var sslContext = HttpClientUtil.sslContext(config);
-
 
         final HttpClient httpClient = HttpClient.newBuilder()
                 .sslContext(sslContext)
