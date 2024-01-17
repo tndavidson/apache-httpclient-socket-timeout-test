@@ -18,9 +18,9 @@ import static com.github.tomakehurst.wiremock.client.WireMock.aResponse;
 import static com.github.tomakehurst.wiremock.client.WireMock.get;
 import static org.junit.Assert.assertNotNull;
 
-public class TestFiduciaryHttpClient {
+public class ApacheClientNoTLS {
 
-private static final Logger LOGGER = LoggerFactory.getLogger(TestFiduciaryHttpClient.class);
+private static final Logger LOGGER = LoggerFactory.getLogger(ApacheClientNoTLS.class);
 	
 	HttpClientConfig config = new HttpClientConfig();
 	
@@ -28,7 +28,7 @@ private static final Logger LOGGER = LoggerFactory.getLogger(TestFiduciaryHttpCl
 	public WireMockRule wireMockRule = new WireMockRule(WireMockConfiguration.wireMockConfig().port(8556));
 
 	@Test
-	public void TestFiduciaryNotTLS() throws IOException {
+	public void testApacheNoTls() throws IOException {
 		config.setConnectionRequestTimeout(10000);
 		config.setConnectionTimeToLive(10000);
 		config.setConnectTimeout(10000);

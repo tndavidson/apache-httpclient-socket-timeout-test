@@ -20,8 +20,8 @@ import static com.github.tomakehurst.wiremock.client.WireMock.aResponse;
 import static com.github.tomakehurst.wiremock.client.WireMock.get;
 import static java.net.URI.create;
 
-public class JavaHttpClientTest {
-    private static final Logger LOGGER = LoggerFactory.getLogger(JavaHttpClientTest.class);
+public class JavaNativeHttpClientMtlsTest {
+    private static final Logger LOGGER = LoggerFactory.getLogger(JavaNativeHttpClientMtlsTest.class);
 
     @Rule
     public WireMockRule wireMockRule = new WireMockRule(WireMockConfiguration.wireMockConfig().httpsPort(8446)
@@ -30,7 +30,7 @@ public class JavaHttpClientTest {
 
 
     @Test
-    public void testJavaHttpClient() throws URISyntaxException, IOException, InterruptedException {
+    public void testJavaNativeHttpClientMtls() throws URISyntaxException, IOException, InterruptedException {
 
         System.setProperty("jdk.httpclient.HttpClient.log", "errors,requests,headers,frames[:control:data:window:all],content,ssl,trace,channel,all");
 
