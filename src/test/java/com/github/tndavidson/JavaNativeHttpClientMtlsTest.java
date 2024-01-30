@@ -3,6 +3,7 @@ package com.github.tndavidson;
 import com.github.tomakehurst.wiremock.client.WireMock;
 import com.github.tomakehurst.wiremock.core.WireMockConfiguration;
 import com.github.tomakehurst.wiremock.junit.WireMockRule;
+import org.assertj.core.api.Assertions;
 import org.junit.Rule;
 import org.junit.Test;
 import org.slf4j.Logger;
@@ -13,7 +14,7 @@ import java.net.URISyntaxException;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
-import java.nio.file.Paths;
+import java.net.http.HttpTimeoutException;
 import java.time.Duration;
 
 import static com.github.tomakehurst.wiremock.client.WireMock.aResponse;
@@ -24,52 +25,53 @@ public class JavaNativeHttpClientMtlsTest {
     private static final Logger LOGGER = LoggerFactory.getLogger(JavaNativeHttpClientMtlsTest.class);
 
     @Rule
-    public WireMockRule wireMockRule = new WireMockRule(WireMockConfiguration.wireMockConfig().httpsPort(8446)
+    public WireMockRule wireMockRule = new WireMockRule(WireMockConfiguration.wireMockConfig().httpsPort(8443)
             .keystorePath("./src/test/resources/server-keystore.jks").keystorePassword("secret").keyManagerPassword("secret")
             .trustStorePath("./src/test/resources/server-truststore.jks").trustStorePassword("secret").httpDisabled(true));
 
 
+    /**
+     * Just for sanity, I added the same scenario using JDK's built in HttpClient, and this test passes, honoring
+     * the 8-second timeout
+     *
+     * @throws URISyntaxException
+     * @throws IOException
+     * @throws InterruptedException
+     */
     @Test
     public void testJavaNativeHttpClientMtls() throws URISyntaxException, IOException, InterruptedException {
-
+        // Turn up Jav HttpClient logging
         System.setProperty("jdk.httpclient.HttpClient.log", "errors,requests,headers,frames[:control:data:window:all],content,ssl,trace,channel,all");
 
-        HttpClientConfig config = new HttpClientConfig();
-        config.setProtocol("TLS");
-        config.setKeyStore(
-                Paths.get(Thread.currentThread().getContextClassLoader().getResource("client-keystore.jks").toURI())
-                        .toString());
-        config.setKeyStorePassword("secret");
-        config.setKeyAlias("secure-client");
-        config.setKeyPassword("secret");
-        config.setTrustStore(
-                Paths.get(Thread.currentThread().getContextClassLoader().getResource("client-truststore.jks").toURI())
-                        .toString());
-        config.setTrustStorePassword("secret");
+        var config = new HttpClientConfig();
+        ClientUtil.setTlsProps(config);
 
-        var sslContext = HttpClientUtil.sslContext(config);
+        var sslContext = ClientUtil.sslContext(config);
 
-        final HttpClient httpClient = HttpClient.newBuilder()
+        var httpClient = HttpClient.newBuilder()
                 .sslContext(sslContext)
                 .connectTimeout(Duration.ofSeconds(2))
                 .build();
 
         WireMock.stubFor(
-                get(WireMock.urlMatching("/fiduciary-data/v2/123456789")).willReturn(aResponse().withFixedDelay(20000)));
+                get(WireMock.urlMatching("/test-java-client")).willReturn(aResponse().withFixedDelay(20000)));
 
         // because the CN of the server cert is "localhostServer", you need to add the following entry in your /etc/hosts file (C:\Windows\System32\drivers\etc\hosts on windows)
         // 127.0.0.1       localhostServer
 
-        HttpRequest getRequest = HttpRequest.newBuilder()
-                .uri(create("https://localhostServer:8446/fiduciary-data/v2/123456789")).timeout(Duration.ofSeconds(8)).build();
+        var getRequest = HttpRequest.newBuilder()
+                .uri(create("https://localhostServer:8443/test-java-client")).timeout(Duration.ofSeconds(8)).build();
+        var startTime = System.currentTimeMillis();
 
-        LOGGER.info("sending GET request to wiremock...");
-        HttpResponse<String> response = httpClient.send(getRequest, HttpResponse.BodyHandlers.ofString());
 
-        LOGGER.info("response: {}", response);
+        try {
+            httpClient.send(getRequest, HttpResponse.BodyHandlers.ofString());
+        } catch (HttpTimeoutException e) {
+            LOGGER.error("Http timeout", e);
+        }
+
+        var endTime = System.currentTimeMillis();
+
+        Assertions.assertThat(endTime - startTime).isLessThan(9000L);
     }
-
-
-
-
 }
