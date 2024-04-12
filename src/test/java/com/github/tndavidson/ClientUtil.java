@@ -31,7 +31,7 @@ public class ClientUtil {
         var httpClientBuilder = HttpClients.custom().setDefaultRequestConfig(requestConfig);
         var socketFactoryRegistryBuilder = RegistryBuilder.<ConnectionSocketFactory>create();
 
-        if ("TLS".equals(config.getProtocol())) {
+        if ("TLSv1.3".equals(config.getProtocol())) {
             var sslContext = sslContext(config);
             var sslConnectionSocketFactory = new SSLConnectionSocketFactory(sslContext, NoopHostnameVerifier.INSTANCE);
             socketFactoryRegistryBuilder.register("https", sslConnectionSocketFactory);
@@ -48,7 +48,7 @@ public class ClientUtil {
     }
 
     public static void setTlsProps(HttpClientConfig config) throws URISyntaxException {
-        config.setProtocol("TLS");
+        config.setProtocol("TLSv1.3");
         config.setKeyStore(Paths.get(Thread.currentThread().getContextClassLoader()
                 .getResource("client-keystore.jks").toURI()).toString());
         config.setKeyStorePassword("secret");

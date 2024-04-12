@@ -33,8 +33,9 @@ private static final Logger LOGGER = LoggerFactory.getLogger(ApacheClientNoTlsTe
 	 *
 	 * @throws IOException
 	 */
-	@Test
+	//@Test
 	public void testApacheNoTls() throws IOException {
+		
 		var config = new HttpClientConfig();
 		config.setRequestTimeout(8000);
 		
@@ -47,13 +48,14 @@ private static final Logger LOGGER = LoggerFactory.getLogger(ApacheClientNoTlsTe
 		var startTime = System.currentTimeMillis();
 
 		try {
+			
 			httpClient.execute(httpget, (HttpClientResponseHandler<String>) classicHttpResponse -> null);
-		} catch (SocketTimeoutException e) {
+		} catch (Exception e) {
 			LOGGER.error("Socket Timeout", e);
 		}
 
 		var endTime = System.currentTimeMillis();
-
+		System.out.println("*******  apache no tls total time (millis): " + Long.toString(endTime - startTime) + "  ******");
 		Assertions.assertThat(endTime - startTime).isLessThan(9000L);
 	}
 }

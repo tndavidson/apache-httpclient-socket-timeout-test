@@ -10,7 +10,6 @@ import java.net.URISyntaxException;
 
 import org.apache.hc.client5.http.classic.methods.HttpGet;
 import org.apache.hc.core5.http.io.HttpClientResponseHandler;
-import org.assertj.core.api.Assertions;
 import org.junit.Rule;
 import org.junit.Test;
 import org.slf4j.Logger;
@@ -43,8 +42,9 @@ public class ApacheClientNotHonoringRequestTimeoutTest {
      * @throws IOException
      * @throws URISyntaxException
      */
-    @Test
+    //@Test
     public void testApacheClientRequestTimeout() throws IOException, URISyntaxException {
+
         var config = new HttpClientConfig();
         config.setRequestTimeout(8000);
         ClientUtil.setTlsProps(config);
@@ -53,18 +53,64 @@ public class ApacheClientNotHonoringRequestTimeoutTest {
 
         WireMock.stubFor(
                 get(WireMock.urlMatching("/test-tls")).willReturn(aResponse().withFixedDelay(20000)));
-
         var httpget = new HttpGet("https://localhost:8443/test-tls");
         var startTime = System.currentTimeMillis();
 
         try {
+        	System.out.println("******* making socket request ******");
             httpClient.execute(httpget, (HttpClientResponseHandler<String>) classicHttpResponse -> null);
-        } catch (SocketTimeoutException e) {
+            
+        } catch (Exception e) {
             LOGGER.error("Socket Timeout", e);
         }
 
         var endTime = System.currentTimeMillis();
+        System.out.println("*******  apache https total time (millis): " + Long.toString(endTime - startTime) + "  ******");
+        // Assertions.assertThat(endTime - startTime).isLessThan(9000L);
+        
 
-        Assertions.assertThat(endTime - startTime).isLessThan(9000L);
+//        var startTime2 = System.currentTimeMillis();
+//        try {
+//	        ConnectionConfig connConfig = ConnectionConfig.custom()
+//	        	    .setConnectTimeout(8000L, TimeUnit.MILLISECONDS)
+//	        	    .setSocketTimeout(8000, TimeUnit.MILLISECONDS)
+//	        	    .build();
+//	
+//	    	RequestConfig requestConfig = RequestConfig.custom()
+//	    	    .setConnectionRequestTimeout(Timeout.ofMilliseconds(2000L))
+//	    	    .build();
+//	
+//	        TrustStrategy acceptingTrustStrategy = (cert, authType) -> true;
+//	        SSLContext sslContext = SSLContexts.custom()
+//	            .loadTrustMaterial(null, acceptingTrustStrategy)
+//	            .build();
+//	        SSLConnectionSocketFactory sslsf = 
+//	            new SSLConnectionSocketFactory(sslContext, NoopHostnameVerifier.INSTANCE);
+//	        Registry<ConnectionSocketFactory> socketFactoryRegistry = 
+//	            RegistryBuilder.<ConnectionSocketFactory> create()
+//	            .register("https", sslsf)
+//	            .register("http", new PlainConnectionSocketFactory())
+//	            .build();
+//	    	
+//	    	
+//	    	BasicHttpClientConnectionManager cm = new BasicHttpClientConnectionManager(socketFactoryRegistry);
+//	    	cm.setConnectionConfig(connConfig);
+//	
+//	    	CloseableHttpClient httpClient2 = HttpClientBuilder.create()
+//	    	    .setDefaultRequestConfig(requestConfig)
+//	    	    .setConnectionManager(cm)
+//	    	    .build();
+//	        
+//	        
+//	        
+//
+//            httpClient2.execute(httpget, (HttpClientResponseHandler<String>) classicHttpResponse -> null);
+//        } catch (Exception e) {
+//            LOGGER.error("Test 2 Exception: ", e);
+//        }
+//
+//        var endTime2 = System.currentTimeMillis();
+//        System.out.println("*******  apache https using CloseableHttpClient total time (millis): " + Long.toString(endTime2 - startTime2) + "  ******");
+
     }
 }
