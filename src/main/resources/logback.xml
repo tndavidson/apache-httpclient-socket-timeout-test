@@ -10,6 +10,8 @@
 
     <logger name="org.apache.hc" level="debug" />
     <logger name="java.net.http" level="debug" />
+    <logger name="com.github.tndavidson" level="debug" />
+    
 
     <root level="info">
         <appender-ref ref="STDOUT" />
