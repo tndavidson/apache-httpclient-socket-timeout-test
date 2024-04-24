@@ -1,0 +1,14 @@
+spring:
+  profiles.active: ENV-LOCAL-DEV 
+  application.name: test-webflux-webclient
+        
+spring.devtools.restart.enabled: false
+
+spring.cloud.gateway.httpserver.wiretap: true
+
+logging:
+  level:
+    com.github.tndavidson: DEBUG 
+    org.apache.hc: DEBUG
+    java.net.http: DEBUG
+    reactor.netty.http.client: DEBUG
