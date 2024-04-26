@@ -28,12 +28,14 @@ public class TlsWebClientCI {
 	public Mono<ContactInformationBio> getContactInformation() {
 		LOG.debug("CI WebClient get contact info");
 		
-		Mono<ContactInformationBio> response = client.get()
+		Mono<ContactInformationBio> response = client
+				    .get()
 					.accept(MediaType.APPLICATION_JSON)
 					.retrieve()
 					.bodyToMono(ContactInformationBio.class)
 					.onErrorResume(ex -> Mono.empty());
-		            //.block();
+
+//		response.block();
 		return response;
 	}
 	
