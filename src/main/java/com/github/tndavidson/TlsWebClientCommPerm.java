@@ -21,27 +21,27 @@ public class TlsWebClientCommPerm {
 	private WebClient client;
 	
 	@Autowired
-	@Qualifier("PooledCommPermWebClientWithTimeouts")
+	@Qualifier("CommPermWebClientWithTimeouts")
 	private WebClient clientWithTimeouts;
 
 
-	public Mono<String> getCommPerm() {
+	public Mono<CommunicationPermissionBio> getCommPerm() {
 		LOG.debug("Commperm WebClient get permission");
-		return this.client
+		return client
 					.get()
 					.accept(MediaType.APPLICATION_JSON)
 					.retrieve()
-					.bodyToMono(String.class)
+					.bodyToMono(CommunicationPermissionBio.class)
 					.onErrorResume(ex -> Mono.empty());
 	}
 	
-	public Mono<String> getCommPermWithTimeouts() {
+	public Mono<CommunicationPermissionBio> getCommPermWithTimeouts() {
 		LOG.debug("Commperm WebClient get permission");
-		return this.clientWithTimeouts
+		return clientWithTimeouts
 					.get()
 					.accept(MediaType.APPLICATION_JSON)
 					.retrieve()
-					.bodyToMono(String.class)
+					.bodyToMono(CommunicationPermissionBio.class)
 					.onErrorResume(ex -> Mono.empty());
 	}
 

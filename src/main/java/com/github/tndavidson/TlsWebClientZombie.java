@@ -20,13 +20,13 @@ public class TlsWebClientZombie {
 	private WebClient client;
 	
 	@Autowired
-	@Qualifier("DefaultZombieWebClient")
+	@Qualifier("ZombieWebClientWithTimeouts")
 	private WebClient clientWithTimeouts;
 
 	
 	public Mono<String> getResponse() {
 		LOG.debug("calling zombie service");
-		return this.client
+		return client
 					.get()
 					.accept(MediaType.APPLICATION_JSON)
 					.retrieve()
@@ -36,7 +36,7 @@ public class TlsWebClientZombie {
 	
 	public Mono<String> getResponseWithTimeouts() {
 		LOG.debug("calling zombie service with timeouts");
-		return this.clientWithTimeouts
+		return clientWithTimeouts
 					.get()
 					.accept(MediaType.APPLICATION_JSON)
 					.retrieve()

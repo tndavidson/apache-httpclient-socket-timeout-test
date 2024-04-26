@@ -4,7 +4,6 @@ import static com.github.tomakehurst.wiremock.client.WireMock.aResponse;
 import static com.github.tomakehurst.wiremock.client.WireMock.get;
 
 import java.time.Duration;
-import java.util.concurrent.TimeUnit;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -20,13 +19,9 @@ import com.github.tomakehurst.wiremock.client.WireMock;
 import com.github.tomakehurst.wiremock.core.WireMockConfiguration;
 
 import io.netty.channel.ChannelOption;
-import io.netty.channel.epoll.EpollChannelOption;
 import io.netty.handler.ssl.util.InsecureTrustManagerFactory;
-import io.netty.handler.timeout.ReadTimeoutHandler;
-import io.netty.handler.timeout.WriteTimeoutHandler;
 import reactor.netty.http.Http11SslContextSpec;
 import reactor.netty.http.client.HttpClient;
-import reactor.netty.resources.ConnectionProvider;
 
 
 
@@ -40,23 +35,28 @@ public class HttpWebClientConfig {
     
     private static final Logger LOG = LoggerFactory.getLogger(HttpWebClientConfig.class);
     
-    private String ciUrl = "http://localhost:8443/test-tls-ci";
-    private String commPermUrl = "http://localhost:8443/test-tls-commperm";
-    private String zombieUrl = "http://localhost:8443/test-tls-zombie";
+    private String ciUrl = "https://localhost:8443/test-tls-ci";
+    private String commPermUrl = "https://localhost:8443/test-tls-commperm";
+    private String zombieUrl = "https://localhost:8443/test-tls-zombie";
+    
+    private final String fakeCertPath = "c:/temp/";
+    
     
     @Bean
     public WireMockServer getWiremockServer() {
-    	WireMockServer wireMockServer = new WireMockServer(8443);
+    	//WireMockServer wireMockServer = new WireMockServer(8443);
     	
-//    	WireMockServer wireMockServer = new WireMockServer(WireMockConfiguration.options()
-//    			.httpsPort(8443)
-//    			.httpDisabled(true)
-//                .keystorePath("./src/test/resources/server-keystore.jks")
-//                .keystorePassword("secret")
-//                .keyManagerPassword("secret")
-//                .trustStorePath("./src/test/resources/server-truststore.jks")
-//                .trustStorePassword("secret")
-//    	);
+    	WireMockServer wireMockServer = new WireMockServer(WireMockConfiguration.options()
+    			.httpsPort(8443)
+    			.httpDisabled(true)
+    			.asynchronousResponseThreads(50)
+    			.containerThreads(100)
+                .keystorePath(fakeCertPath + "server-keystore.jks")
+                .keystorePassword("secret")
+                .keyManagerPassword("secret")
+                .trustStorePath(fakeCertPath + "server-truststore.jks")
+                .trustStorePassword("secret")
+    	);
     	wireMockServer.start();
     	wireMockServer.stubFor(
                 get(WireMock.urlMatching("/test-tls-ci")).willReturn(aResponse().withHeader("Content-Type", "application/json")
@@ -85,22 +85,15 @@ public class HttpWebClientConfig {
      * @return HttpClient
      */
     @Bean
-    public HttpClient getPooledHttpsClientWithTimeouts() {
-    	ConnectionProvider poolProvider = ConnectionProvider.builder("custom-connection-pool")
-		    			                  .maxConnections(30)
-		    			                  .pendingAcquireMaxCount(200)
-		    			                  .build();
-    	HttpClient client = HttpClient.create(poolProvider)
+    public HttpClient getHttpsClientWithTimeouts() {
+    	// HttpClient client = HttpClient.create(ConnectionProvider.create("test-webclient-pool", 15))
+    	HttpClient client = HttpClient.create()
     			  .wiretap(true)
+    			  // 8 second response timeout (socket timeout)
+    			  .responseTimeout(Duration.ofSeconds(8))
     			  // 5 second http connection timeout
     			  .option(ChannelOption.CONNECT_TIMEOUT_MILLIS, 5000)
-    			  .option(ChannelOption.SO_KEEPALIVE, true)
-    			  .option(EpollChannelOption.TCP_KEEPIDLE, 240)
-    			  .option(EpollChannelOption.TCP_KEEPINTVL, 60)
-    			  // http read and write timeouts of 8 seconds
-    			  .doOnConnected(conn -> conn
-    			    .addHandlerLast(new ReadTimeoutHandler(8, TimeUnit.SECONDS))
-    			    .addHandlerLast(new WriteTimeoutHandler(8)));
+    			  .option(ChannelOption.SO_KEEPALIVE, true);
     	Http11SslContextSpec http11SslContextSpec = Http11SslContextSpec.forClient().configure(
     			builder -> {
     				builder.trustManager(InsecureTrustManagerFactory.INSTANCE);
@@ -118,7 +111,7 @@ public class HttpWebClientConfig {
 						    // after sending a close_notify
 						    .closeNotifyReadTimeout(Duration.ofSeconds(1));
 	        	});
-        LOG.debug("Configured HttpsClient with Timeouts and ConnectionPool");
+        LOG.debug("Configured HttpsClient with Timeouts: {}", client.toString());
     	return client;
     }
     
@@ -137,17 +130,19 @@ public class HttpWebClientConfig {
         		spec -> {
 	                spec.sslContext(http11SslContextSpec);
 	        	});
-        LOG.debug("Configured Default HttpsClient");
+        LOG.debug("Configured Default HttpsClient: {}", client.toString());
     	return client;
     }
+
     
     @Bean
-    @Qualifier("PooledCIWebClientWithTimeouts")
+    @Qualifier("CIWebClientWithTimeouts")
     public WebClient getPooledCIWebClientWithTimeouts() {
     	WebClient client = WebClient.builder()
     			  .baseUrl(ciUrl)
-    			  .clientConnector(new ReactorClientHttpConnector(getPooledHttpsClientWithTimeouts()))
+    			  .clientConnector(new ReactorClientHttpConnector(getHttpsClientWithTimeouts()))
     			  .build();
+    	LOG.debug("Built CI Web Client With Timeouts");
     	return client;
     }
     
@@ -156,17 +151,18 @@ public class HttpWebClientConfig {
     public WebClient getDefaultCIWebClient() {
     	return WebClient.builder()
   			  .baseUrl(ciUrl)
-  			  .clientConnector(new ReactorClientHttpConnector(HttpClient.create().wiretap(true)))
+  			  .clientConnector(new ReactorClientHttpConnector(getDefaultHttpsClient()))
   			  .build();
     }
     
     @Bean
-    @Qualifier("PooledCommPermWebClientWithTimeouts")
+    @Qualifier("CommPermWebClientWithTimeouts")
     public WebClient getPooledCommPermWebClientWithTimeouts() {
     	WebClient client = WebClient.builder()
     			  .baseUrl(commPermUrl)
-    			  .clientConnector(new ReactorClientHttpConnector(getPooledHttpsClientWithTimeouts()))
+    			  .clientConnector(new ReactorClientHttpConnector(getHttpsClientWithTimeouts()))
     			  .build();
+    	LOG.debug("Built CommPerm Web Client With Timeouts");
     	return client;
     }
     
@@ -180,12 +176,13 @@ public class HttpWebClientConfig {
     }
     
     @Bean
-    @Qualifier("PooledZombieWebClientWithTimeouts")
-    public WebClient getPooledZombieWebClientWithTimeouts() {
+    @Qualifier("ZombieWebClientWithTimeouts")
+    public WebClient getZombieWebClientWithTimeouts() {
     	WebClient client = WebClient.builder()
     			  .baseUrl(zombieUrl)
-    			  .clientConnector(new ReactorClientHttpConnector(getPooledHttpsClientWithTimeouts()))
+    			  .clientConnector(new ReactorClientHttpConnector(getHttpsClientWithTimeouts()))
     			  .build();
+    	LOG.debug("Built Zombie Web Client With Timeouts");
     	return client;
     }
     

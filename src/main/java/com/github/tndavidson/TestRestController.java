@@ -1,7 +1,10 @@
 package com.github.tndavidson;
 
+import java.util.List;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
@@ -23,20 +26,29 @@ public class TestRestController {
 	@Autowired
 	private TlsWebClientZombie clientZombie;
 	
+    @GetMapping("/load-test-with-timeouts/{useClientsWithTimeouts}/{aggregateTimeout}")
+    public List<ProfileResponse> loadProfileData(@PathVariable Integer aggregateTimeout, @PathVariable Boolean useClientsWithTimeouts) {
+    	long startTime = System.currentTimeMillis();
+    	long aggregateTimeoutSeconds = Long.valueOf(aggregateTimeout);
+    	List<ProfileResponse> response = profileService.loadUserProfileData(useClientsWithTimeouts, aggregateTimeoutSeconds);
+        long endTime = System.currentTimeMillis();
+        System.out.println("*******  loaded(50) aggregate response total time (millis): " + Long.toString(endTime - startTime) + "  ******");
+    	return response;
+    }
 	
-//    @GetMapping("/test-with-timeouts")
-//    public ProfileResponse getProfileDataWithTimeouts() {
-//    	long startTime = System.currentTimeMillis();
-//    	ProfileResponse response = profileService.getUserProfileDataWithTimeouts();
-//        long endTime = System.currentTimeMillis();
-//        System.out.println("*******  aggregate response total time (millis): " + Long.toString(endTime - startTime) + "  ******");
-//    	return response;
-//    }
+    @GetMapping("/test-with-timeouts")
+    public ProfileResponse getProfileDataWithTimeouts() {
+    	long startTime = System.currentTimeMillis();
+    	ProfileResponse response = profileService.getUserProfileDataWithTimeouts(5L);
+        long endTime = System.currentTimeMillis();
+        System.out.println("*******  aggregate response total time (millis): " + Long.toString(endTime - startTime) + "  ******");
+    	return response;
+    }
     
     @GetMapping("/test-no-timeouts")
     public ProfileResponse getProfileData() {
     	long startTime = System.currentTimeMillis();
-    	ProfileResponse response = profileService.getUserProfileData();
+    	ProfileResponse response = profileService.getUserProfileData(5L);
         long endTime = System.currentTimeMillis();
         System.out.println("*******  aggregate response total time (millis): " + Long.toString(endTime - startTime) + "  ******");
     	return response;
@@ -45,7 +57,7 @@ public class TestRestController {
     @GetMapping("/test")
     public Mono<String> test() {
     	ContactInformationBio responseBio = new ContactInformationBio();
-    	long startTime = System.currentTimeMillis();
+    	//long startTime = System.currentTimeMillis();
     	//Mono<String> responseMono = client.getContactInformation();
     	
     	Mono<String> responseMono = clientZombie.getResponse();

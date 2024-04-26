@@ -21,33 +21,30 @@ public class TlsWebClientCI {
 	private WebClient client;
 	
 	@Autowired
-	@Qualifier("PooledCIWebClientWithTimeouts")
+	@Qualifier("CIWebClientWithTimeouts")
 	private WebClient clientWithTimeouts;
 
 
-	public Mono<String> getContactInformation() {
+	public Mono<ContactInformationBio> getContactInformation() {
 		LOG.debug("CI WebClient get contact info");
 		
-		Mono<String> response = client.get()
+		Mono<ContactInformationBio> response = client.get()
 					.accept(MediaType.APPLICATION_JSON)
 					.retrieve()
-					.bodyToMono(String.class)
+					.bodyToMono(ContactInformationBio.class)
 					.onErrorResume(ex -> Mono.empty());
 		            //.block();
-
-		//LOG.debug("CI WebClient has response={}", response != null ? response.toString() : "null");
 		return response;
 	}
 	
-	public Mono<String> getContactInformationWithTimeouts() {
+	public Mono<ContactInformationBio> getContactInformationWithTimeouts() {
 		LOG.debug("CI WebClient get contact info with timeouts");
-		Mono<String> response =  this.clientWithTimeouts
+		Mono<ContactInformationBio> response =  clientWithTimeouts
 					.get()
 					.accept(MediaType.APPLICATION_JSON)
 					.retrieve()
-					.bodyToMono(String.class)
+					.bodyToMono(ContactInformationBio.class)
 					.onErrorResume(ex -> Mono.empty());
-		LOG.debug("CI WebClient get contact info with timeouts returned response Mono");
 		return response;
 	}
 
