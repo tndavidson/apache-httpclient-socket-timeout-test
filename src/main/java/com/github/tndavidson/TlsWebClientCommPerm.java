@@ -1,7 +1,6 @@
 package com.github.tndavidson;
 
 import reactor.core.publisher.Mono;
-
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -11,6 +10,7 @@ import org.springframework.stereotype.Component;
 import org.springframework.web.reactive.function.client.WebClient;
 import com.github.tndavidson.pojo.CommunicationPermissionBio;
 
+
 @Component
 public class TlsWebClientCommPerm {
 	
@@ -18,16 +18,16 @@ public class TlsWebClientCommPerm {
 
 	@Autowired
 	@Qualifier("DefaultCommPermWebClient")
-	private WebClient client;
+	private WebClient webClient;
 	
 	@Autowired
-	@Qualifier("CommPermWebClientWithTimeouts")
-	private WebClient clientWithTimeouts;
+	@Qualifier("PooledCommPermWebClientWithTimeouts")
+	private WebClient webClientWithTimeouts;
 
 
 	public Mono<CommunicationPermissionBio> getCommPerm() {
 		LOG.debug("Commperm WebClient get permission");
-		return client
+		return webClient
 					.get()
 					.accept(MediaType.APPLICATION_JSON)
 					.retrieve()
@@ -37,7 +37,7 @@ public class TlsWebClientCommPerm {
 	
 	public Mono<CommunicationPermissionBio> getCommPermWithTimeouts() {
 		LOG.debug("Commperm WebClient get permission");
-		return clientWithTimeouts
+		return webClientWithTimeouts
 					.get()
 					.accept(MediaType.APPLICATION_JSON)
 					.retrieve()
