@@ -27,7 +27,7 @@ public class ProfileAggregationService {
 	
 	private static final Logger LOG = LoggerFactory.getLogger(ProfileAggregationService.class);
 	
-	private static final ExecutorService executor = Executors.newFixedThreadPool(20);
+	private static final ExecutorService executor = Executors.newFixedThreadPool(40);
 	
 	@Autowired
     private TlsWebClientCI contactInfoClient;
@@ -136,7 +136,7 @@ public class ProfileAggregationService {
     	LOG.debug("loadUserProfileData start");
     	List<ProfileResponse> responseList = new ArrayList<>();
     	List<Callable<ProfileResponse>> runList = new ArrayList<>();
-    	for(int i = 0; i < 50; i++) {
+    	for(int i = 0; i < 80; i++) {
     		if(useClientsWithTimeouts) {
 	    		Callable<ProfileResponse> callable = new Callable<>() {
 	    			@Override

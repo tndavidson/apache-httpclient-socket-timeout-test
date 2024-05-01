@@ -52,14 +52,17 @@ public class TestRestController {
     	return response;
     }
 
-    @GetMapping("/test")
-    public Mono<String> test() {
-    	ContactInformationBio responseBio = new ContactInformationBio();
+    @GetMapping("/test/{useClientsWithTimeouts}")
+    public Mono<String> test(@PathVariable Boolean useClientsWithTimeouts) {
+    	//ContactInformationBio responseBio = new ContactInformationBio();
     	//long startTime = System.currentTimeMillis();
     	//Mono<String> responseMono = client.getContactInformation();
-    	
-    	Mono<String> responseMono = clientZombie.getResponse();
-    	
+    	Mono<String> responseMono = null;
+    	if(useClientsWithTimeouts) {
+    		responseMono = clientZombie.getResponseWithTimeouts();
+    	} else {
+    		responseMono = clientZombie.getResponse();
+    	}
     	responseMono.subscribe(
     			  value -> System.out.println("responseMono got value=" + value.toString()), 
     			  error -> error.printStackTrace());
